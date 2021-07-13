@@ -1,7 +1,12 @@
+#![feature(destructuring_assignment)]
+
 mod example;
 mod util;
 #[path = "./codingame/puzzle/shadow_casting.rs"]
 mod shadow_casting;
+
+#[path = "./codingame/puzzle/the_lost_files.rs"]
+mod the_lost_files;
 
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
