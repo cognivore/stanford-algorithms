@@ -1,12 +1,19 @@
-#![feature(destructuring_assignment)]
+#![feature(destructuring_assignment, hash_raw_entry)]
 
 mod example;
 mod util;
+
 #[path = "./codingame/puzzle/shadow_casting.rs"]
 mod shadow_casting;
 
 #[path = "./codingame/puzzle/the_lost_files.rs"]
 mod the_lost_files;
+
+#[path = "./ctf/rusty_chal.rs"]
+mod rusty;
+
+#[path = "./howto/raw_entry_api.rs"]
+mod raw_entry_api;
 
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];

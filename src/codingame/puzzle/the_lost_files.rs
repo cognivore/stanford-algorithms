@@ -1,10 +1,17 @@
+use std::{
+    collections::{BTreeSet, HashMap},
+    hash::Hash,
+};
+
 use crate::util::*;
 
-crate::entry_point!("codingame/puzzle/the_lost_files", main);
+crate::entry_point!("codingame/puzzle/the_lost_files/1", first_attempt);
 
-pub fn main() {
+pub fn first_attempt() {
     let w = load_problem(1);
-    eprintln!("{:?}", w);
+    //eprintln!("{:?}", w);
+    let g = world_to_adj_list_graph(w);
+    //eprintln!("{:#?}", g);
     let (Continents(c), Tiles(t)) = solve(load_problem(1));
     println!("{} {}", c, t);
 }
@@ -15,14 +22,16 @@ pub struct World {
     edges: Vec<Edge>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct Edge(i32, i32);
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub struct Edge(VertexId, VertexId);
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Continents(i32);
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Tiles(i32);
+
+type Graph = HashMap<VertexId, Vec<VertexId>>;
 
 pub fn load_problem(id: i32) -> World {
     let mut res = Vec::new();
@@ -31,22 +40,58 @@ pub fn load_problem(id: i32) -> World {
     let mut data = data0.split('\n');
     data.next();
     for l in data {
-        if l == "" {continue};
+        if l == "" {
+            continue;
+        };
         let mut vals = l.split(' ');
-        let from = (vals.next().unwrap()).parse::<i32>().unwrap();
-        let to = (vals.next().unwrap()).parse::<i32>().unwrap();
+        let from = VertexId((vals.next().unwrap()).parse::<i32>().unwrap());
+        let to = VertexId((vals.next().unwrap()).parse::<i32>().unwrap());
         res.push(Edge(from, to));
     }
-    World {edges: res}
+    World { edges: res }
 }
 
-fn render_world(w: World) -> String {
-    panic!("Not implemented")
+pub fn world_to_adj_list_graph(w: World) -> Graph {
+    let mut res: Graph = HashMap::new();
+
+    for Edge(from, to) in w.edges {
+        mut_register_edge(&mut res, from, to);
+        mut_register_edge(&mut res, to, from);
+    }
+    res
 }
 
-fn solve(w: World) -> (Continents, Tiles) {
-    panic!("Not implemented")
+pub fn mut_register_edge(g: &mut Graph, from: VertexId, to: VertexId) {
+    if let Some(adj_list) = (*g).get_mut(&from) {
+        adj_list.push(to);
+    } else {
+        let mut adj_list = Vec::new();
+        adj_list.push(to);
+        (*g).insert(from, adj_list);
+    }
 }
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub struct Level(i32);
+
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub struct VertexId(i32);
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct SolverState {}
+
+pub fn solve(w: World) -> (Continents, Tiles) {
+    panic!("not implemented")
+}
+
+//// I ended up not needing this, but check out ./src/howto/raw_entry_api.rs for relevant howto!
+// pub fn mut_pop_map<K: Hash + Eq + Clone, V>(m: &mut HashMap<K, V>) -> Option<(K, V)> {
+//     if let Some(k) = m.keys().next().cloned() {
+//         m.remove_entry(&k)
+//     } else {
+//         None
+//     }
+// }
 
 #[test]
 fn test_p1_passes() {
