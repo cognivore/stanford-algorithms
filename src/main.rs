@@ -1,4 +1,4 @@
-#![feature(destructuring_assignment, hash_raw_entry)]
+#![feature(hash_raw_entry)]
 
 mod example;
 mod util;

@@ -16,3 +16,4 @@ Cargo.lock
 
 # VSCode debugger
 .vscode
+.direnv/
