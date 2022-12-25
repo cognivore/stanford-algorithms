@@ -9,8 +9,7 @@
 
     outputs = {self, fenix, nixpkgs}:
         let pkgs = nixpkgs.legacyPackages.x86_64-linux;
-            # rustt = ((builtins.trace fenix.outputs.packages.x86_64-linux fenix).complete.withComponents [
-            rustt = (fenix.outputs.packages.x86_64-linux.complete.withComponents [
+            rust_complete = (fenix.outputs.packages.x86_64-linux.complete.withComponents [
                         "cargo"
                         "clippy"
                         "rustc"
@@ -23,7 +22,7 @@
             devShell.x86_64-linux =
                 pkgs.mkShell {
                     buildInputs = [
-                        rustt
+                        rust_complete
                         # Helpers
                         pkgs.httpie
                         pkgs.jq

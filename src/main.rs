@@ -9,6 +9,9 @@ mod shadow_casting;
 #[path = "./codingame/puzzle/the_lost_files.rs"]
 mod the_lost_files;
 
+#[path = "./janestreet/die-agony.rs"]
+mod die_agony;
+
 #[path = "./ctf/rusty_chal.rs"]
 mod rusty;
 
