@@ -3,18 +3,6 @@
 mod example;
 mod util;
 
-#[path = "./codingame/puzzle/shadow_casting.rs"]
-mod shadow_casting;
-
-#[path = "./codingame/puzzle/the_lost_files.rs"]
-mod the_lost_files;
-
-#[path = "./janestreet/die-agony.rs"]
-mod die_agony;
-
-#[path = "./ctf/rusty_chal.rs"]
-mod rusty;
-
 #[path = "./howto/raw_entry_api.rs"]
 mod raw_entry_api;
 
