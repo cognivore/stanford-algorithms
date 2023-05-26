@@ -6,6 +6,9 @@ mod util;
 #[path = "./howto/raw_entry_api.rs"]
 mod raw_entry_api;
 
+#[path = "./aa_introduction/aa_dcmul.rs"]
+mod aa_dcmul;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 
