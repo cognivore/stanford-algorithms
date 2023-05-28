@@ -23,6 +23,7 @@ pub fn karatsuba(x: u64, y: u64) -> u64 {
 }
 
 fn krec(x: u64, y: u64, n: u8) -> u64 {
+    dbg!("{#?} / {#?} @ {#?}", x, y, n);
     if n <= 2 {
         return x * y;
     }
