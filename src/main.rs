@@ -9,6 +9,9 @@ mod raw_entry_api;
 #[path = "./aa_introduction/aa_dcmul.rs"]
 mod aa_dcmul;
 
+#[path = "./aa_introduction/ab_sort.rs"]
+mod ab_sort;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 
