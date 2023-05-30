@@ -12,6 +12,9 @@ mod aa_dcmul;
 #[path = "./aa_introduction/ab_sort.rs"]
 mod ab_sort;
 
+#[path = "./aa_introduction/ac_merge.rs"]
+mod ac_merge;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 
