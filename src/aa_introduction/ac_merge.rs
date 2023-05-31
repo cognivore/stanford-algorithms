@@ -219,7 +219,7 @@ mod tests {
     #[test]
     fn test_shuffle() {
         let mut xs = vec![];
-        for x in 0..=10 {
+        for x in 0..=999_961 {
             xs.push(x);
             xs.push(x);
         }
