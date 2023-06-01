@@ -6,6 +6,9 @@ mod util;
 #[path = "./howto/raw_entry_api.rs"]
 mod raw_entry_api;
 
+#[path = "./howto/custom_array.rs"]
+mod custom_array;
+
 #[path = "./aa_introduction/aa_dcmul.rs"]
 mod aa_dcmul;
 
