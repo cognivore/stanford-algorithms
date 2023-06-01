@@ -18,6 +18,9 @@ mod ab_sort;
 #[path = "./aa_introduction/ac_merge.rs"]
 mod ac_merge;
 
+#[path = "./ab_hw1/aa_inversions.rs"]
+mod aa_inversions;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 
