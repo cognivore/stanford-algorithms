@@ -63,9 +63,13 @@ pub fn main() {
         input.iter().max().unwrap(),
         input.iter().min().unwrap(),
         input.iter().sum::<u64>() as f64 / input.len() as f64,
-        //count_inversions(input.clone()) // !! Funny thing: println macro won't release borrow on
+        //count_inversions(input.clone()) // Tidbit. println macro won't release borrow on
         //input (duh). So we need another println! or clone() to release the borrow.
     );
+    // Tidbit.
+    // Note how we have declared input as immutable, but since we forfeit the ownership to the
+    // underlying function and we can't use it anymore, the underlying function can declare its
+    // argument as mutable.
     println!("Inversions: {}", count_inversions(input));
 }
 
