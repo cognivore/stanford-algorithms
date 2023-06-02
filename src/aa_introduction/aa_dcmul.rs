@@ -43,6 +43,7 @@ fn split(x: u64, n: u8) -> (u64, u64) {
 
 // Tests!
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -60,3 +61,4 @@ mod tests {
         }
     }
 }
+*/

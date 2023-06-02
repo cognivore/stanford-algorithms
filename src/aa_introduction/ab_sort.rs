@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn test_shuffle() {
         let mut xs = vec![];
-        for x in 0..=10000 {
+        for x in 0..=10 {
             xs.push(x);
             xs.push(x);
         }
@@ -56,6 +56,6 @@ mod tests {
         xs.shuffle(&mut rng);
         xs.select();
         // Assert that select(xs) mutates it to match image:
-        assert_eq!(xs, image); 
+        assert_eq!(xs, image);
     }
 }

@@ -21,6 +21,9 @@ mod ac_merge;
 #[path = "./ab_hw1/aa_inversions.rs"]
 mod aa_inversions;
 
+#[path = "./ac_hw2/quick.rs"]
+mod quick;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 
