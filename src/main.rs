@@ -24,6 +24,9 @@ mod aa_inversions;
 #[path = "./ac_hw2/quick.rs"]
 mod quick;
 
+#[path = "./ad_hw3/aa_karger.rs"]
+mod aa_karger;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 
