@@ -73,27 +73,14 @@ impl MinCuttable for Graph {
                 } else {
                     // dbg!("Ignoring self-loop", edge_i, "on node", node_id);
                 }
-                // Now replace all edges from X to node2 with edges to node.
-                /* for node in graph.nodes[*edge_i].edges.iter_mut() {
-                    dbg!("Checking edge", &node, "on node", edge_i);
-                    if *node == node2.id {
-                        dbg!("Replacing edge", &node, "with", &node_id);
-                        *node = node_id;
-                    }
-                } */
-                // Now replace all the node2 edges with node edges.
-                /* for node in graph.nodes.iter_mut() {
-                    for edge in node.edges.iter_mut() {
-                        if *edge == node2_id {
-                            *edge = node_id;
-                        }
-                    }
-                } */
             }
+
+            // Remove self-loops just in case
             graph.nodes[node_id]
                 .edges
                 .retain(|&x| x != node2_id && x != node_id);
 
+            // For each neighbours, replace all edges to node2 with edges to node.
             for node_j in graph.nodes[node_id].edges.clone() {
                 for edge_j in graph.nodes[node_j].edges.iter_mut() {
                     if *edge_j == node2_id {
@@ -102,10 +89,6 @@ impl MinCuttable for Graph {
                 }
             }
 
-            // Delete all the mentions of node2 from node, because they are self-loops now.
-            // Delete all the mentions of node from node too. Duh.
-
-            // Delete all the edges from node2.
             graph.nodes[node2_id].edges = Vec::new();
 
             removed.push(node2.id);
