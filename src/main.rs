@@ -1,6 +1,7 @@
 #![feature(hash_raw_entry)]
 
 mod example;
+mod graph;
 mod util;
 
 #[path = "./howto/raw_entry_api.rs"]
@@ -27,7 +28,8 @@ mod quick;
 #[path = "./ad_hw3/aa_karger.rs"]
 mod aa_karger;
 
-mod graph;
+#[path = "./ae_hw4/aa_kosajaru.rs"]
+mod aa_kosajaru;
 
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
