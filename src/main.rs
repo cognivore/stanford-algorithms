@@ -31,6 +31,9 @@ mod aa_karger;
 #[path = "./ae_hw4/aa_kosajaru.rs"]
 mod aa_kosajaru;
 
+#[path = "./ae_hw4/ab_kosyak.rs"]
+mod ab_kosyak;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 

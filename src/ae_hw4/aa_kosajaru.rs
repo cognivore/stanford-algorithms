@@ -98,11 +98,10 @@ where
             diag_i = diag_i + 1;
             if diag_i % 1000 == 0 {
                 let glitch = graph.nodes.get(&node_id).unwrap();
-                dbg!(&glitch);
+                // dbg!(&glitch);
                 for neighbour in neighbours(glitch) {
-                    dbg!(graph.nodes.get(&neighbour).unwrap());
+                    // dbg!(graph.nodes.get(&neighbour).unwrap());
                 }
-                eprintln!("*************************************************");
                 let time_now: std::time::Instant = std::time::Instant::now();
                 if time_now.duration_since(time_previous).as_millis() > max_delta {
                     eprintln!("[dfs_topo] max delta has increased to: {:?}", max_delta);
@@ -112,9 +111,7 @@ where
             }
 
             let node = graph.nodes.get(&node_id).unwrap();
-            if is_start {
-                stack.push(node_id.clone());
-            }
+            stack.push(node_id.clone());
             is_start = false;
             let current_neighbours: Vec<T> = neighbours(node)
                 .iter()
@@ -122,7 +119,10 @@ where
                 .cloned()
                 .collect();
             for neighbour in &current_neighbours {
-                if !graph.nodes.get(&neighbour).unwrap().processed {
+                if !(neighbour == &node_id)
+                    && !stack.contains(&neighbour)
+                    && !graph.nodes.get(&neighbour).unwrap().processed
+                {
                     stack.push(neighbour.clone());
                 }
             }
@@ -146,7 +146,13 @@ where
                 // top_sort.insert(i, node_id);
             }
             // dbg!("ending stack: {:?}", &stack);
-            // dbg!("ending queue: {:?}", &queue);
+            eprintln!("=====================================");
+            eprintln!("node_id: {:?}", &node_id);
+            eprintln!("node: {:?}", graph.nodes.get(&node_id).unwrap());
+            // TODO: IF SOMETHING HAS INVERSE EDGE THAT IS ALSO AN EDGE,
+            //       WE CAN SIMPLY ADD ALL NODES EXCEPT FOR ONE
+            //       INTO CURRENT SCC.
+            // eprintln!("=====================================");
             //dbg!("processed: {:?}", &processed);
             //dbg!("seen: {:?}", &seen);
         }
@@ -264,12 +270,12 @@ mod tests {
         /*
          *
          *   ,-------------,
-         *   v             |
-         *   1 <--- 2 ---> 3 ---> 4
-         *   |             ^ <---'
-         *   `-------------`
-         *
-         *
+         *   v             |      ,---,
+         *   1 <--- 2 ---> 3 ---> 4<--`
+         *   |             ^ <---'^
+         *   `-------------`       \
+         *                          \
+         *                          `--> 5
          */
         let mut graph: Graph<usize> = Graph::new();
         graph.add_edge(1, 2);
@@ -278,6 +284,9 @@ mod tests {
         graph.add_edge(1, 3);
         graph.add_edge(3, 4);
         graph.add_edge(4, 3);
+        graph.add_edge(4, 4);
+        graph.add_edge(4, 5);
+        graph.add_edge(5, 4);
         let sccs = kosaraju(&mut graph);
         assert_eq!(sccs.len(), 1);
     }
