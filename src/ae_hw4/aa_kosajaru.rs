@@ -1,6 +1,7 @@
 crate::entry_point!("kosajaru", main);
-use crate::graph::{dfs_topo, irrel, Graph, Node};
+use crate::graph::{dfs_finish_ord, irrel, Graph, Node};
 use fxhash::FxHashMap as HashMap;
+use fxhash::FxHashSet as HashSet;
 use std::collections::VecDeque;
 use std::hash::Hash;
 use std::str::FromStr;
@@ -24,15 +25,17 @@ pub fn main() {
 
 pub fn kosaraju(graph: &mut Graph<usize>) -> Vec<Graph<usize>> {
     let trajectory1: VecDeque<usize> = graph.nodes.keys().cloned().collect();
-    let (_, topo_sort1) = dfs_topo(graph, &trajectory1, |x| x.inverse_edges.clone(), irrel);
+    let (_, topo_sort1) = dfs_finish_ord(graph, &trajectory1, |x| x.inverse_edges.clone(), irrel);
     // Trajectory 2 is topo_sort1 from lowest vertex to highest
     // dbg!(&topo_sort1);
+    let sort_topo1 = topo_sort1
+        .iter()
+        .map(|(k, v)| (v.clone(), k))
+        .collect::<HashMap<i64, &usize>>();
     let mut trajectory2 = VecDeque::new();
-    for i in 0..graph.nodes.len() {
-        // dbg!(&trajectory2);
-        trajectory2.push_back(topo_sort1.get(&i).unwrap().clone());
-        // dbg!(&trajectory2);
-        // println!("************************");
+    for i in 0..sort_topo1.len() {
+        let nid: usize = *sort_topo1.get(&(i as i64)).unwrap().clone();
+        trajectory2.push_back(nid);
     }
     // dbg!(&graph);
     // dbg!(&trajectory2);
@@ -49,118 +52,54 @@ where
     T: Clone + Eq + Hash + FromStr + std::fmt::Debug,
     <T as FromStr>::Err: std::fmt::Debug,
 {
-    let mut queue: VecDeque<T> = trajectory.clone();
-    assert_eq!(queue.len(), graph.nodes.len());
-    let mut stack: Vec<T> = vec![];
-    //
-    // let mut top_sort: HashMap<usize, T> = HashMap::default();
-    let mut i = trajectory.len();
-    //
-    let mut current_scc: HashMap<T, Node<T>> = HashMap::default();
-    let mut ys = vec![];
-    let mut is_start: bool = true;
-    // Diagnostics
-    let mut max_delta: u128 = 0;
-    let mut time_previous: std::time::Instant = std::time::Instant::now();
-    let mut diag_i: usize = 0;
-    // dbg!(&queue);
-    while !queue.is_empty() {
-        let node_id = if stack.is_empty() {
-            // dbg!("stack is EMPTY, popping QUEUE");
-            let mut node_id_candidate = queue.pop_front().unwrap();
-            let mut node_candidate = graph.nodes.get(&node_id_candidate).unwrap();
-            while !queue.is_empty() && node_candidate.processed {
-                node_id_candidate = queue.pop_front().unwrap();
-                node_candidate = graph.nodes.get(&node_id_candidate).unwrap();
+    let mut finish_times = HashMap::default();
+    let mut time = 0;
+    let mut stack = VecDeque::new();
+    let mut trajectory = trajectory.clone();
+    stack.push_back(trajectory.front().unwrap().clone());
+    let mut current_scc = Graph::new();
+    let mut sccs = Vec::new();
+    let mut seen = HashSet::default();
+    loop {
+        // dbg!(&stack);
+        // dbg!(&finish_times);
+        if stack.is_empty() {
+            loop {
+                if trajectory.is_empty() {
+                    sccs.push(current_scc);
+                    return sccs;
+                }
+                let node = trajectory.pop_front().unwrap();
+                if !seen.contains(&node) {
+                    // dbg!(&trajectory);
+                    sccs.push(current_scc);
+                    current_scc = Graph::new();
+                    stack.push_back(node);
+                    break;
+                }
             }
-            // dbg!(is_start);
-            if !is_start {
-                // dbg!("ADDING STUFF");
-                // dbg!(&current_scc);
-                ys.push(Graph::from_nodes(current_scc));
-                // dbg!(&ys);
-                current_scc = HashMap::default();
+        }
+        let node = stack.pop_back().unwrap();
+        if !seen.contains(&node) {
+            seen.insert(node.clone());
+            // eprintln!("Pushing node {:?}", node);
+            stack.push_back(node.clone());
+            let node = graph.nodes.get(&node).unwrap();
+            let neighbours = neighbours(node);
+            for neighbour in neighbours {
+                let n = neighbour.clone();
+                if !(&neighbour == &node.id) && !seen.contains(&neighbour) {
+                    stack.push_back(n);
+                }
             }
-            is_start = true;
-            // dbg!("RETURNING CANDIDATE");
-            node_id_candidate
         } else {
-            // dbg!("stack is not empty, popping");
-            let next = stack.pop().unwrap();
-            // dbg!("next: {:?}", &next);
-            next
-        };
-        // Check that HashMap's values contain node_id
-        let node = graph.nodes.get_mut(&node_id).unwrap();
-        if !node.processed {
-            node.seen = true;
-            // Generate pseudorandum number between 0 and 1000
-            diag_i = diag_i + 1;
-            if diag_i % 1000 == 0 {
-                let glitch = graph.nodes.get(&node_id).unwrap();
-                // dbg!(&glitch);
-                for neighbour in neighbours(glitch) {
-                    // dbg!(graph.nodes.get(&neighbour).unwrap());
-                }
-                let time_now: std::time::Instant = std::time::Instant::now();
-                if time_now.duration_since(time_previous).as_millis() > max_delta {
-                    eprintln!("[dfs_topo] max delta has increased to: {:?}", max_delta);
-                    max_delta = time_now.duration_since(time_previous).as_millis();
-                }
-                time_previous = time_now;
+            if !finish_times.contains_key(&node) {
+                finish_times.insert(node.clone(), time);
+                time += 1;
+                current_scc.add_node(&node);
             }
-
-            let node = graph.nodes.get(&node_id).unwrap();
-            stack.push(node_id.clone());
-            is_start = false;
-            let current_neighbours: Vec<T> = neighbours(node)
-                .iter()
-                .filter(|neighbour| !graph.nodes.get(&neighbour).unwrap().processed)
-                .cloned()
-                .collect();
-            for neighbour in &current_neighbours {
-                if !(neighbour == &node_id)
-                    && !stack.contains(&neighbour)
-                    && !graph.nodes.get(&neighbour).unwrap().processed
-                {
-                    stack.push(neighbour.clone());
-                }
-            }
-            let unseen_neighbours: Vec<T> = current_neighbours
-                .iter()
-                .filter(|neighbour| !graph.nodes.get(&neighbour).unwrap().seen)
-                .cloned()
-                .collect();
-            if unseen_neighbours.is_empty() {
-                i = i - 1;
-                let node = graph.nodes.get_mut(&node_id).unwrap();
-                node.processed = true;
-                current_scc.insert(
-                    node_id.clone(),
-                    Node::new(
-                        node_id.clone(),
-                        node.edges.clone(),
-                        node.inverse_edges.clone(),
-                    ),
-                );
-                // top_sort.insert(i, node_id);
-            }
-            // dbg!("ending stack: {:?}", &stack);
-            eprintln!("=====================================");
-            eprintln!("node_id: {:?}", &node_id);
-            eprintln!("node: {:?}", graph.nodes.get(&node_id).unwrap());
-            // TODO: IF SOMETHING HAS INVERSE EDGE THAT IS ALSO AN EDGE,
-            //       WE CAN SIMPLY ADD ALL NODES EXCEPT FOR ONE
-            //       INTO CURRENT SCC.
-            // eprintln!("=====================================");
-            //dbg!("processed: {:?}", &processed);
-            //dbg!("seen: {:?}", &seen);
         }
     }
-    if !current_scc.is_empty() {
-        ys.push(Graph::from_nodes(current_scc));
-    }
-    ys
 }
 
 #[cfg(test)]
@@ -239,6 +178,7 @@ mod tests {
         graph.add_edge(11, 6);
         graph.add_edge(11, 8);
         let sccs = kosaraju(&mut graph);
+        // dbg!(&sccs);
         assert_eq!(sccs.len(), 4);
         let mut outcome_sorted = sccs.iter().map(|x| x.nodes.len()).collect::<Vec<usize>>();
         outcome_sorted.sort();

@@ -1,4 +1,5 @@
 use fxhash::FxHashMap as HashMap;
+use fxhash::FxHashSet as HashSet;
 use std::clone::Clone;
 use std::collections::VecDeque;
 use std::fs::File;
@@ -45,15 +46,18 @@ where
     pub fn from_nodes(nodes: HashMap<T, Node<T>>) -> Self {
         Self { nodes }
     }
-    pub fn add_node(&mut self, id: T) {
+    pub fn new_node(&mut self, id: T) {
         if !self.nodes.contains_key(&id) {
             self.nodes
                 .insert(id.clone(), Node::new(id.clone(), Vec::new(), Vec::new()));
         }
     }
+    pub fn add_node(&mut self, node: &T) {
+        self.new_node(node.clone());
+    }
     pub fn add_edge(&mut self, from: T, to: T) {
-        self.add_node(from.clone());
-        self.add_node(to.clone());
+        self.new_node(from.clone());
+        self.new_node(to.clone());
         self.nodes.get_mut(&from).unwrap().edges.push(to.clone());
         self.nodes.get_mut(&to).unwrap().inverse_edges.push(from);
     }
@@ -78,86 +82,74 @@ where
     }
 }
 
-pub fn dfs_topo<T, Y>(
+pub fn dfs_finish_ord<T, Y>(
     graph: &mut Graph<T>,
     trajectory: &VecDeque<T>,
     neighbours: fn(&Node<T>) -> Vec<T>,
     search: fn(&Node<T>) -> Option<Y>,
-) -> (Option<Y>, HashMap<usize, T>)
+) -> (Option<Y>, HashMap<T, i64>)
 where
     T: Clone + Eq + Hash,
 {
-    let mut queue: VecDeque<T> = trajectory.clone();
-    assert_eq!(queue.len(), graph.nodes.len());
-    let mut stack: Vec<T> = vec![];
-    //
-    // let mut processed: Vec<T> = Vec::new();
-    // let mut seen: Vec<T> = Vec::new();
-    let mut top_sort: HashMap<usize, T> = HashMap::default();
-    let mut i = trajectory.len();
-    //
-    let is_start: bool = true;
-    // Diagnostics
-    let mut max_delta: u128 = 0;
-    let mut time_previous: std::time::Instant = std::time::Instant::now();
-    let mut diag_i: usize = 0;
-    while !queue.is_empty() {
-        let node_id = if stack.is_empty() {
-            queue.pop_front().unwrap()
-        } else {
-            stack.pop().unwrap()
-        };
-        let node: &mut Node<T> = graph.nodes.get_mut(&node_id).unwrap();
-        // Check that HashMap's values contain node_id
-        if !node.processed {
-            // Generate pseudorandum number between 0 and 1000
-            diag_i = diag_i + 1;
-            if diag_i % 1000 == 0 {
-                eprint!(".");
-                let time_now: std::time::Instant = std::time::Instant::now();
-                if time_now.duration_since(time_previous).as_millis() > max_delta {
-                    eprintln!("[dfs_topo] max delta has increased to: {:?}", max_delta);
-                    max_delta = time_now.duration_since(time_previous).as_millis();
-                }
-                time_previous = time_now;
-            }
+    let (y, finish_times) = dfs_finish_time(graph, trajectory, neighbours, search);
+    let mut finish_order = HashMap::default();
+    for (node, time) in finish_times {
+        finish_order.insert(node, graph.nodes.len() as i64 - time - 1);
+    }
+    (y, finish_order)
+}
 
-            node.seen = true;
-            if let Some(result) = search(node) {
-                return (Some(result), top_sort);
-            }
-            if is_start {
-                stack.push(node_id.clone());
-            }
-            let current_neighbours: Vec<T> = neighbours(node)
-                .iter()
-                .filter(|neighbour| !graph.nodes.get(&neighbour).unwrap().processed)
-                .cloned()
-                .collect();
-            for neighbour in &current_neighbours {
-                if !graph.nodes.get(&neighbour).unwrap().seen {
-                    stack.push(neighbour.clone());
+pub fn dfs_finish_time<T, Y>(
+    graph: &mut Graph<T>,
+    trajectory: &VecDeque<T>,
+    neighbours: fn(&Node<T>) -> Vec<T>,
+    search: fn(&Node<T>) -> Option<Y>,
+) -> (Option<Y>, HashMap<T, i64>)
+where
+    T: Clone + Eq + Hash,
+{
+    let mut finish_times = HashMap::default();
+    let mut time = 0;
+    let mut seen = HashSet::default();
+    let mut stack = VecDeque::new();
+    let mut trajectory = trajectory.clone();
+    let mut result = None;
+    stack.push_back(trajectory.front().unwrap().clone());
+    loop {
+        if stack.is_empty() {
+            loop {
+                if trajectory.is_empty() {
+                    return (result, finish_times);
+                }
+                let node = trajectory.pop_front().unwrap();
+                if !seen.contains(&node) {
+                    stack.push_back(node);
+                    break;
                 }
             }
-            let unseen_neighbours: Vec<T> = current_neighbours
-                .iter()
-                .filter(|neighbour| !graph.nodes.get(&neighbour).unwrap().seen)
-                .cloned()
-                .collect();
-            if unseen_neighbours.is_empty() {
-                i = i - 1;
-                let node = graph.nodes.get_mut(&node_id).unwrap();
-                node.processed = true;
-                top_sort.insert(i, node_id);
+        } else {
+            let node = stack.pop_back().unwrap();
+            if !seen.contains(&node) {
+                seen.insert(node.clone());
+                stack.push_back(node.clone());
+                let node = graph.nodes.get(&node).unwrap();
+                let neighbours = neighbours(node);
+                for neighbour in neighbours {
+                    if !seen.contains(&neighbour) {
+                        stack.push_back(neighbour);
+                    }
+                }
+            } else {
+                if !finish_times.contains_key(&node) {
+                    finish_times.insert(node.clone(), time);
+                    time += 1;
+                }
+                if let Some(y) = search(graph.nodes.get(&node).unwrap()) {
+                    result = Some(y);
+                }
             }
         }
     }
-    // Unset seen and processed flags
-    for node in graph.nodes.values_mut() {
-        node.seen = false;
-        node.processed = false;
-    }
-    (None, top_sort)
 }
 
 pub fn irrel<T>(_node: &Node<T>) -> Option<bool> {
@@ -199,11 +191,12 @@ mod tests {
         //let trajectory: VecDeque<usize> = graph.nodes.keys().cloned().collect();
         for trajectory in trajectories {
             let (_, processed) =
-                dfs_topo(&mut graph, &trajectory, |node| node.edges.clone(), irrel);
-            assert!(processed.get(&0).unwrap() == &1);
-            assert!(processed.get(&1).unwrap() == &2 || processed.get(&1).unwrap() == &3);
-            assert!(processed.get(&2).unwrap() == &2 || processed.get(&2).unwrap() == &3);
-            assert!(processed.get(&3).unwrap() == &4);
+                dfs_finish_ord(&mut graph, &trajectory, |node| node.edges.clone(), irrel);
+            // dbg!(&processed);
+            assert!(processed.get(&1).unwrap() == &0);
+            assert!(processed.get(&2).unwrap() == &1 || processed.get(&3).unwrap() == &1);
+            assert!(processed.get(&2).unwrap() == &2 || processed.get(&3).unwrap() == &2);
+            assert!(processed.get(&4).unwrap() == &3);
         }
     }
 
@@ -215,7 +208,7 @@ mod tests {
         graph.add_edge(2, 3);
         graph.add_edge(3, 1);
         let trajectory: VecDeque<usize> = graph.nodes.keys().cloned().collect();
-        let (result, _) = dfs_topo(&mut graph, &trajectory, |node| node.edges.clone(), irrel);
+        let (result, _) = dfs_finish_ord(&mut graph, &trajectory, |node| node.edges.clone(), irrel);
         assert!(result.is_none());
     }
 }
