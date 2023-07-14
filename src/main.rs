@@ -34,6 +34,15 @@ mod aa_kosajaru;
 #[path = "./ae_hw4/ab_kosyak.rs"]
 mod ab_kosyak;
 
+#[path = "./af_hw5_dijkstra/aa_dijkstra.rs"]
+mod aa_dijkstra;
+
+#[path = "./ag_hw6/aa_two_sum.rs"]
+mod aa_two_sum;
+
+#[path = "./ag_hw6/ab_median.rs"]
+mod ab_median;
+
 #[linkme::distributed_slice]
 static ENTRY_POINTS: [(&'static str, fn())] = [..];
 

@@ -13,3 +13,4 @@ serde_json = "*"
 rand = "*"
 chrono = { version = "*", features = ["serde"] }
 fxhash = "*"
+petgraph = "*"
